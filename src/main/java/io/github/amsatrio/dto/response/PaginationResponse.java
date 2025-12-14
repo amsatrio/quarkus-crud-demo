@@ -3,11 +3,13 @@ package io.github.amsatrio.dto.response;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@RegisterForReflection
 public class PaginationResponse<T> {
     private List<T> content;
     private Boolean last;
