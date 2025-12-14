@@ -1,0 +1,58 @@
+@base_url=http://localhost:8080
+@hello_world_base_url={{base_url}}/v1/hello-world
+@health_base_url={{base_url}}/v1/health
+@mbiodata_base_url={{base_url}}/v1/m-biodata
+
+# === hello-world
+### hello-world/hello
+curl -X GET --location {{hello_world_base_url}}/hello
+
+### hello-world/a
+curl -X GET --location {{hello_world_base_url}}/a
+
+### hello-world?param=a
+curl -X GET --location {{hello_world_base_url}}?param=a
+
+### hello-world/log
+curl -X GET --location {{hello_world_base_url}}/log?logLevel=error
+
+### hello-world/error
+curl -X GET --location {{hello_world_base_url}}/error?errorType=bad_requesta
+
+# === health
+### health/status
+curl -X GET --location {{health_base_url}}/status
+
+
+# === m-biodata
+### page
+curl -X GET --location {{mbiodata_base_url}}?page=500&size=2
+### sort
+curl -X GET --location {{mbiodata_base_url}}?sort='[{"id": "id", "desc": true}]'
+### filter
+curl -X GET --location {{mbiodata_base_url}}?filter='[{"id": "fullname", "value": "a", "matchMode": "CONTAINS", "dataType": "TEXT"}]'
+### get
+curl -X GET --location {{mbiodata_base_url}}/1754726492
+### create
+POST {{mbiodata_base_url}}
+Content-Type: application/json
+
+{
+    "id": 1754726492,
+    "fullname": "okey dokey 1212",
+    "mobilePhone": "0872635473",
+    "isDelete": false 
+}
+### update
+PUT {{mbiodata_base_url}}
+Content-Type: application/json
+
+{
+    "id": 1754726492,
+    "fullname": "okey dokey 1",
+    "mobilePhone": "0872635473",
+    "isDelete": false 
+}
+
+### delete
+curl -X DELETE --location {{mbiodata_base_url}}/1754726492
