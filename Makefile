@@ -1,5 +1,5 @@
 start:
-	JAVA_HOME=/opt/openjdk-bin-25 ./mvnw quarkus:dev
+	JAVA_HOME=/opt/openjdk-bin-25 ./mvnw quarkus:dev -X
 build:
 	JAVA_HOME=/opt/openjdk-bin-25 ./mvnw package -X
 start_jar:
