@@ -1,7 +1,6 @@
 package io.github.amsatrio.middleware.filter;
 
 import java.io.IOException;
-import org.jboss.logging.Logger;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
