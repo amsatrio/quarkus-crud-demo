@@ -2,7 +2,9 @@ package io.github.amsatrio.modules.mbiodata;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.github.amsatrio.dto.enumerator.FilterMatchMode;
 import io.github.amsatrio.dto.exception.DataExistException;
@@ -11,10 +13,8 @@ import io.github.amsatrio.dto.request.FilterRequest;
 import io.github.amsatrio.dto.request.SortRequest;
 import io.github.amsatrio.dto.response.AppResponse;
 import io.github.amsatrio.dto.response.PaginationResponse;
-import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Parameters;
-import io.quarkus.panache.common.Sort;
 import jakarta.inject.Inject;
+import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -40,11 +40,13 @@ public class MBiodataApi {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public AppResponse<MBiodata> getById(@PathParam("id") Long id) {
-        MBiodata mBiodata = mBiodataRepository.findById(id);
-        if (mBiodata == null) {
-            throw new NotFoundException();
+       MBiodata entity = null;
+        try {
+            entity = mBiodataRepository.findById(id);
+        } catch (NoResultException e) {
+            throw new NotFoundException("data not found");
         }
-        return AppResponse.ok(mBiodata);
+        return AppResponse.ok(entity);
     }
 
     @DELETE
@@ -52,7 +54,12 @@ public class MBiodataApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public AppResponse<MBiodata> deleteById(@PathParam("id") Long id) {
-        mBiodataRepository.deleteById(id);
+        try {
+            mBiodataRepository.findById(id);
+        } catch (NoResultException e) {
+            throw new NotFoundException("data not found");
+        }
+        mBiodataRepository.hardDelete(id);
         return AppResponse.ok(null);
     }
 
@@ -61,9 +68,13 @@ public class MBiodataApi {
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
     public AppResponse<MBiodata> create(MBiodata data) {
-        MBiodata entity = mBiodataRepository.findById(data.getId());
-        if (entity != null) {
-            throw new DataExistException("data exists");
+        try {
+            MBiodata existing = mBiodataRepository.findById(data.getId());
+            if (existing != null) {
+                throw new DataExistException("data exists");
+            }
+        } catch (NoResultException e) {
+            // expected - data does not exist
         }
 
         Long accessUserId = 0L;
@@ -75,7 +86,7 @@ public class MBiodataApi {
         data.setDeletedOn(null);
         data.setIsDelete(false);
 
-        mBiodataRepository.persist(data);
+        mBiodataRepository.insert(data);
         return AppResponse.ok(null);
     }
 
@@ -84,8 +95,10 @@ public class MBiodataApi {
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
     public AppResponse<MBiodata> update(MBiodata data) {
-        MBiodata entity = mBiodataRepository.findById(data.getId());
-        if (entity == null) {
+        MBiodata entity = null;
+        try {
+            entity = mBiodataRepository.findById(data.getId());
+        } catch (NoResultException e) {
             throw new NotFoundException("data not found");
         }
 
@@ -105,6 +118,7 @@ public class MBiodataApi {
         entity.setFullname(data.getFullname());
         entity.setMobilePhone(data.getMobilePhone());
 
+        mBiodataRepository.update(entity);
         return AppResponse.ok(null);
     }
 
@@ -114,26 +128,21 @@ public class MBiodataApi {
             @QueryParam("size") Integer pageSize, @QueryParam("sort") String sortRequestString,
             @QueryParam("filter") String filterRequestString) {
 
-        // PAGINATION
         if (pageIndex == null) {
             pageIndex = 0;
         }
         if (pageSize == null) {
             pageSize = 5;
         }
-        Page page = Page.of(pageIndex, pageSize);
 
-        // SORT
-        Sort sort = Sort.by("id").ascending();
+        String sortColumn = "id";
+        boolean sortAsc = true;
         if (sortRequestString != null) {
             SortRequest sortRequest = SortRequest.from(sortRequestString).getFirst();
-            sort = Sort.by(sortRequest.getId()).ascending();
-            if (sortRequest.isDesc()) {
-                sort.descending();
-            }
+            sortColumn = MBiodataRepository.toColumnName(sortRequest.getId());
+            sortAsc = !sortRequest.isDesc();
         }
 
-        // FILTER
         List<FilterRequest> filterRequests = new ArrayList<>();
         if (filterRequestString != null) {
             filterRequests = FilterRequest.from(filterRequestString);
@@ -141,50 +150,57 @@ public class MBiodataApi {
 
         List<MBiodata> data = new ArrayList<>();
         long totalData = 0L;
-        if (filterRequests.size() == 0) {
-            data = mBiodataRepository.findAll(sort).page(page).list();
-            totalData = mBiodataRepository.count();
+
+        if (filterRequests.isEmpty()) {
+            data = mBiodataRepository.findAll(pageIndex, pageSize, sortColumn, sortAsc);
+            totalData = mBiodataRepository.countAll();
         } else {
-            StringBuilder queryBuilder = new StringBuilder();
-            Parameters params = new Parameters();
+            StringBuilder whereClause = new StringBuilder();
+            Map<String, Object> params = new HashMap<>();
+
             for (int i = 0; i < filterRequests.size(); i++) {
                 FilterRequest filterRequest = filterRequests.get(i);
+                String column = MBiodataRepository.toColumnName(filterRequest.getId());
+                String paramName = "p" + i;
+
                 if (i != 0) {
-                    queryBuilder.append(" AND ");
+                    whereClause.append(" AND ");
                 }
 
-                queryBuilder.append(filterRequest.getId());
+                whereClause.append(column);
                 switch (filterRequest.getMatchMode()) {
                     case FilterMatchMode.CONTAINS:
-                        queryBuilder.append(" LIKE ");
-                        params.and(filterRequest.getId(), "%" + filterRequest.getValue() + "%");
+                        whereClause.append(" LIKE :").append(paramName);
+                        params.put(paramName, "%" + filterRequest.getValue() + "%");
                         break;
                     case FilterMatchMode.EQUALS:
-                        queryBuilder.append(" = ");
-                        params.and(filterRequest.getId(), filterRequest.getValue());
+                        whereClause.append(" = :").append(paramName);
+                        params.put(paramName, filterRequest.getValue());
                         break;
                     case FilterMatchMode.NOT:
-                        queryBuilder.append(" <> ");
-                        params.and(filterRequest.getId(), filterRequest.getValue());
+                        whereClause.append(" <> :").append(paramName);
+                        params.put(paramName, filterRequest.getValue());
                         break;
                     case FilterMatchMode.LESS_THAN:
-                        queryBuilder.append(" < ");
-                        params.and(filterRequest.getId(), filterRequest.getValue());
+                        whereClause.append(" < :").append(paramName);
+                        params.put(paramName, filterRequest.getValue());
                         break;
                     case FilterMatchMode.GREATER_THAN:
-                        queryBuilder.append(" > ");
-                        params.and(filterRequest.getId(), filterRequest.getValue());
+                        whereClause.append(" > :").append(paramName);
+                        params.put(paramName, filterRequest.getValue());
+                        break;
                     default:
-                        queryBuilder.append(" LIKE ");
-                        params.and(filterRequest.getId(), "%" + filterRequest.getValue() + "%");
+                        whereClause.append(" LIKE :").append(paramName);
+                        params.put(paramName, "%" + filterRequest.getValue() + "%");
                         break;
                 }
-                queryBuilder.append(":" + filterRequest.getId());
             }
 
-            data = mBiodataRepository.find(queryBuilder.toString(), sort, params).page(page).list();
-            totalData = mBiodataRepository.count(queryBuilder.toString(), params);
+            data = mBiodataRepository.findByFilter(whereClause.toString(), params,
+                    pageIndex, pageSize, sortColumn, sortAsc);
+            totalData = mBiodataRepository.countByFilter(whereClause.toString(), params);
         }
+
         long totalPages = totalData / pageSize;
         if (totalData % pageSize > 0) {
             totalPages++;
