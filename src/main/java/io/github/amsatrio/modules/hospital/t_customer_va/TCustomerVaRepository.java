@@ -1,4 +1,4 @@
-package io.github.amsatrio.modules.mbiodata;
+package io.github.amsatrio.modules.hospital.t_customer_va;
 
 import java.util.List;
 import java.util.Map;
@@ -7,29 +7,30 @@ import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class MBiodataRepository implements PanacheRepository<MBiodata> {
+public class TCustomerVaRepository implements PanacheRepository<TCustomerVa> {
 
-    private static final String TABLE = "m_biodata";
+    private static final String TABLE = "t_customer_va";
 
-    private static final String SELECT_ALL = "SELECT id, fullname, mobile_phone, image, image_path, "
-            + "created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM " + TABLE;
+    private static final String SELECT_ALL = "SELECT id, customer_id, va_number, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_customer_va";
 
-    public MBiodata findById(Long id) {
-        return (MBiodata) getEntityManager()
-                .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MBiodata.class)
+    public TCustomerVa findById(Long id) {
+        return (TCustomerVa) getEntityManager()
+                .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TCustomerVa.class)
                 .setParameter("id", id)
                 .getSingleResult();
     }
 
-    public List<MBiodata> findAll(int pageIndex, int pageSize, String sortColumn, boolean sortAsc) {
+    public List<TCustomerVa> findAll(int pageIndex, int pageSize, String sortColumn, boolean sortAsc) {
         String sql = SELECT_ALL
                 + " ORDER BY " + sortColumn + (sortAsc ? " ASC" : " DESC")
                 + " LIMIT :limit OFFSET :offset";
-        return getEntityManager()
-                .createNativeQuery(sql, MBiodata.class)
+
+        var query = getEntityManager()
+                .createNativeQuery(sql, TCustomerVa.class)
                 .setParameter("limit", pageSize)
-                .setParameter("offset", pageIndex * pageSize)
-                .getResultList();
+                .setParameter("offset", pageIndex * pageSize);
+
+        return query.getResultList();
     }
 
     public long countAll() {
@@ -38,13 +39,13 @@ public class MBiodataRepository implements PanacheRepository<MBiodata> {
                 .getSingleResult();
     }
 
-    public List<MBiodata> findByFilter(String whereClause, Map<String, Object> params,
+    public List<TCustomerVa> findByFilter(String whereClause, Map<String, Object> params,
             int pageIndex, int pageSize, String sortColumn, boolean sortAsc) {
         String sql = SELECT_ALL + " WHERE " + whereClause
                 + " ORDER BY " + sortColumn + (sortAsc ? " ASC" : " DESC")
                 + " LIMIT :limit OFFSET :offset";
         var query = getEntityManager()
-                .createNativeQuery(sql, MBiodata.class);
+                .createNativeQuery(sql, TCustomerVa.class);
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             query.setParameter(entry.getKey(), entry.getValue());
         }
@@ -63,22 +64,16 @@ public class MBiodataRepository implements PanacheRepository<MBiodata> {
         return (Long) query.getSingleResult();
     }
 
-    public void insert(MBiodata data) {
+    public void insert(TCustomerVa data) {
         String sql = "INSERT INTO " + TABLE
-                + " (id, fullname, mobile_phone, image, image_path,"
-                + " created_by, created_on, modified_by, modified_on,"
-                + " deleted_by, deleted_on, is_delete)"
+                + " (id, customer_id, va_number, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete)"
                 + " VALUES"
-                + " (:id, :fullname, :mobile_phone, :image, :image_path,"
-                + " :created_by, :created_on, :modified_by, :modified_on,"
-                + " :deleted_by, :deleted_on, :is_delete)";
+                + " (:id, :customer_id, :va_number, :created_by, :created_on, :modified_by, :modified_on, :deleted_by, :deleted_on, :is_delete)";
         getEntityManager()
                 .createNativeQuery(sql)
                 .setParameter("id", data.getId())
-                .setParameter("fullname", data.getFullname())
-                .setParameter("mobile_phone", data.getMobilePhone())
-                .setParameter("image", data.getImage())
-                .setParameter("image_path", data.getImagePath())
+                .setParameter("customer_id", data.getCustomerId())
+                .setParameter("va_number", data.getVaNumber())
                 .setParameter("created_by", data.getCreatedBy())
                 .setParameter("created_on", data.getCreatedOn())
                 .setParameter("modified_by", data.getModifiedBy())
@@ -89,25 +84,20 @@ public class MBiodataRepository implements PanacheRepository<MBiodata> {
                 .executeUpdate();
     }
 
-    public void update(MBiodata data) {
+    public void update(TCustomerVa data) {
         String sql = "UPDATE " + TABLE
-                + " SET fullname = :fullname, mobile_phone = :mobile_phone,"
-                + " image = :image, image_path = :image_path,"
-                + " modified_by = :modified_by, modified_on = :modified_on,"
-                + " deleted_by = :deleted_by, deleted_on = :deleted_on, is_delete = :is_delete"
+                + " SET customer_id = :customer_id, va_number = :va_number, modified_by = :modified_by, modified_on = :modified_on, deleted_by = :deleted_by, deleted_on = :deleted_on, is_delete = :is_delete"
                 + " WHERE id = :id";
         getEntityManager()
                 .createNativeQuery(sql)
-                .setParameter("id", data.getId())
-                .setParameter("fullname", data.getFullname())
-                .setParameter("mobile_phone", data.getMobilePhone())
-                .setParameter("image", data.getImage())
-                .setParameter("image_path", data.getImagePath())
+                .setParameter("customer_id", data.getCustomerId())
+                .setParameter("va_number", data.getVaNumber())
                 .setParameter("modified_by", data.getModifiedBy())
                 .setParameter("modified_on", data.getModifiedOn())
                 .setParameter("deleted_by", data.getDeletedBy())
                 .setParameter("deleted_on", data.getDeletedOn())
                 .setParameter("is_delete", data.getIsDelete())
+                .setParameter("id", data.getId())
                 .executeUpdate();
     }
 
@@ -133,8 +123,8 @@ public class MBiodataRepository implements PanacheRepository<MBiodata> {
 
     public static String toColumnName(String fieldName) {
         return switch (fieldName) {
-            case "mobilePhone" -> "mobile_phone";
-            case "imagePath" -> "image_path";
+            case "customerId" -> "customer_id";
+            case "vaNumber" -> "va_number";
             case "createdBy" -> "created_by";
             case "createdOn" -> "created_on";
             case "modifiedBy" -> "modified_by";

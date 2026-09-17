@@ -1,4 +1,4 @@
-package io.github.amsatrio.modules.mbiodata;
+package io.github.amsatrio.modules.hospital.t_treatment_discount;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,20 +29,20 @@ import jakarta.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Path("/v1/m-biodata")
+@Path("/v1/t-treatment-discount")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class MBiodataApi {
+public class TTreatmentDiscountApi {
     @Inject
-    private MBiodataRepository mBiodataRepository;
+    private TTreatmentDiscountRepository tTreatmentDiscountRepository;
 
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public AppResponse<MBiodata> getById(@PathParam("id") Long id) {
-       MBiodata entity = null;
+    public AppResponse<TTreatmentDiscount> getById(@PathParam("id") Long id) {
+        TTreatmentDiscount entity = null;
         try {
-            entity = mBiodataRepository.findById(id);
+            entity = tTreatmentDiscountRepository.findById(id);
         } catch (NoResultException e) {
             throw new NotFoundException("data not found");
         }
@@ -53,13 +53,13 @@ public class MBiodataApi {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public AppResponse<MBiodata> deleteById(@PathParam("id") Long id) {
+    public AppResponse<TTreatmentDiscount> deleteById(@PathParam("id") Long id) {
         try {
-            mBiodataRepository.findById(id);
+            tTreatmentDiscountRepository.findById(id);
         } catch (NoResultException e) {
             throw new NotFoundException("data not found");
         }
-        mBiodataRepository.hardDelete(id);
+        tTreatmentDiscountRepository.hardDelete(id);
         return AppResponse.ok(null);
     }
 
@@ -67,14 +67,16 @@ public class MBiodataApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
-    public AppResponse<MBiodata> create(MBiodata data) {
-        try {
-            MBiodata existing = mBiodataRepository.findById(data.getId());
-            if (existing != null) {
-                throw new DataExistException("data exists");
+    public AppResponse<TTreatmentDiscount> create(TTreatmentDiscount data) {
+        if (data.getId() != null) {
+            try {
+                TTreatmentDiscount existing = tTreatmentDiscountRepository.findById(data.getId());
+                if (existing != null) {
+                    throw new DataExistException("data exists");
+                }
+            } catch (NoResultException e) {
+                // expected - data does not exist
             }
-        } catch (NoResultException e) {
-            // expected - data does not exist
         }
 
         Long accessUserId = 0L;
@@ -86,7 +88,7 @@ public class MBiodataApi {
         data.setDeletedOn(null);
         data.setIsDelete(false);
 
-        mBiodataRepository.insert(data);
+        tTreatmentDiscountRepository.insert(data);
         return AppResponse.ok(null);
     }
 
@@ -94,10 +96,10 @@ public class MBiodataApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
-    public AppResponse<MBiodata> update(MBiodata data) {
-        MBiodata entity = null;
+    public AppResponse<TTreatmentDiscount> update(TTreatmentDiscount data) {
+        TTreatmentDiscount entity = null;
         try {
-            entity = mBiodataRepository.findById(data.getId());
+            entity = tTreatmentDiscountRepository.findById(data.getId());
         } catch (NoResultException e) {
             throw new NotFoundException("data not found");
         }
@@ -108,23 +110,21 @@ public class MBiodataApi {
         entity.setDeletedBy(null);
         entity.setDeletedOn(null);
         entity.setIsDelete(data.getIsDelete());
-        if (entity.getIsDelete()) {
+        if (Boolean.TRUE.equals(entity.getIsDelete())) {
             entity.setDeletedBy(accessUserId);
             entity.setDeletedOn(new Date());
         }
 
-        entity.setImage(data.getImage());
-        entity.setImagePath(data.getImagePath());
-        entity.setFullname(data.getFullname());
-        entity.setMobilePhone(data.getMobilePhone());
+        entity.setDoctorOfficeTreatmentPriceId(data.getDoctorOfficeTreatmentPriceId());
+        entity.setValue(data.getValue());
 
-        mBiodataRepository.update(entity);
+        tTreatmentDiscountRepository.update(entity);
         return AppResponse.ok(null);
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public AppResponse<PaginationResponse<MBiodata>> getPagination(@QueryParam("page") Integer pageIndex,
+    public AppResponse<PaginationResponse<TTreatmentDiscount>> getPagination(@QueryParam("page") Integer pageIndex,
             @QueryParam("size") Integer pageSize, @QueryParam("sort") String sortRequestString,
             @QueryParam("filter") String filterRequestString) {
 
@@ -139,7 +139,7 @@ public class MBiodataApi {
         boolean sortAsc = true;
         if (sortRequestString != null) {
             SortRequest sortRequest = SortRequest.from(sortRequestString).getFirst();
-            sortColumn = MBiodataRepository.toColumnName(sortRequest.getId());
+            sortColumn = TTreatmentDiscountRepository.toColumnName(sortRequest.getId());
             sortAsc = !sortRequest.isDesc();
         }
 
@@ -148,19 +148,19 @@ public class MBiodataApi {
             filterRequests = FilterRequest.from(filterRequestString);
         }
 
-        List<MBiodata> data = new ArrayList<>();
+        List<TTreatmentDiscount> data = new ArrayList<>();
         long totalData = 0L;
 
         if (filterRequests.isEmpty()) {
-            data = mBiodataRepository.findAll(pageIndex, pageSize, sortColumn, sortAsc);
-            totalData = mBiodataRepository.countAll();
+            data = tTreatmentDiscountRepository.findAll(pageIndex, pageSize, sortColumn, sortAsc);
+            totalData = tTreatmentDiscountRepository.countAll();
         } else {
             StringBuilder whereClause = new StringBuilder();
             Map<String, Object> params = new HashMap<>();
 
             for (int i = 0; i < filterRequests.size(); i++) {
                 FilterRequest filterRequest = filterRequests.get(i);
-                String column = MBiodataRepository.toColumnName(filterRequest.getId());
+                String column = TTreatmentDiscountRepository.toColumnName(filterRequest.getId());
                 String paramName = "p" + i;
 
                 if (i != 0) {
@@ -196,9 +196,9 @@ public class MBiodataApi {
                 }
             }
 
-            data = mBiodataRepository.findByFilter(whereClause.toString(), params,
+            data = tTreatmentDiscountRepository.findByFilter(whereClause.toString(), params,
                     pageIndex, pageSize, sortColumn, sortAsc);
-            totalData = mBiodataRepository.countByFilter(whereClause.toString(), params);
+            totalData = tTreatmentDiscountRepository.countByFilter(whereClause.toString(), params);
         }
 
         long totalPages = totalData / pageSize;
@@ -206,7 +206,7 @@ public class MBiodataApi {
             totalPages++;
         }
 
-        PaginationResponse<MBiodata> paginationResponse = new PaginationResponse<>();
+        PaginationResponse<TTreatmentDiscount> paginationResponse = new PaginationResponse<>();
         paginationResponse.setContent(data);
         paginationResponse.setTotalElements(totalData);
         paginationResponse.setTotalPages(totalPages);
