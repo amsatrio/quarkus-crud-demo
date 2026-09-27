@@ -13,7 +13,7 @@ public class MDoctorEducationRepository implements PanacheRepository<MDoctorEduc
 
     private static final String SELECT_ALL = "SELECT id, doctor_id, education_level_id, institution_name, major, start_year, end_year, is_last_education, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_doctor_education";
 
-    public MDoctorEducation findById(Long id) {
+    public MDoctorEducation findByIdCached(Long id) {
         return (MDoctorEducation) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MDoctorEducation.class)
                 .setParameter("id", id)

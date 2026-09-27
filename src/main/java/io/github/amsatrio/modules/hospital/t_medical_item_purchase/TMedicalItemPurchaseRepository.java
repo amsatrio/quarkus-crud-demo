@@ -13,7 +13,7 @@ public class TMedicalItemPurchaseRepository implements PanacheRepository<TMedica
 
     private static final String SELECT_ALL = "SELECT id, customer_id, payment_method_id, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_medical_item_purchase";
 
-    public TMedicalItemPurchase findById(Long id) {
+    public TMedicalItemPurchase findByIdCached(Long id) {
         return (TMedicalItemPurchase) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TMedicalItemPurchase.class)
                 .setParameter("id", id)

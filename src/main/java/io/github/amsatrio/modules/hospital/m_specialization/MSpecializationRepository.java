@@ -13,7 +13,7 @@ public class MSpecializationRepository implements PanacheRepository<MSpecializat
 
     private static final String SELECT_ALL = "SELECT id, name, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_specialization";
 
-    public MSpecialization findById(Long id) {
+    public MSpecialization findByIdCached(Long id) {
         return (MSpecialization) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MSpecialization.class)
                 .setParameter("id", id)

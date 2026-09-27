@@ -9,8 +9,7 @@
     <import class="ch.qos.logback.core.ConsoleAppender" />
     <import class="net.logstash.logback.appender.LogstashAccessTcpSocketAppender" />
     <import class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder" />
-    <import class="com.github.danielwegener.logback.kafka.KafkaAppender" />
-    <import class="com.github.danielwegener.logback.kafka.encoding.LayoutKafkaMessageEncoder" />
+    <import class="io.github.amsatrio.KafkaAppender" />
     <import class="ch.qos.logback.classic.AsyncAppender" />
     <import class="ch.qos.logback.core.encoder.LayoutWrappingEncoder" />
     <import class="ch.qos.logback.contrib.json.classic.JsonLayout" />
@@ -19,7 +18,7 @@
     <property name="logPattern" value="%d | %-5level | %logger{35} | %msg%n" />
     <property name="logEncoding" value="UTF-8" />
     <property name="logDirectory" value="logs" />
-    <property name="logServiceName" value="vertx-crud-demo" />
+    <property name="logServiceName" value="spring-hospital" />
 
     <appender name="STDOUT" class="ConsoleAppender">
         <encoder class="PatternLayoutEncoder">

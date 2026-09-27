@@ -14,7 +14,7 @@ public class MBiodataRepository implements PanacheRepository<MBiodata> {
     private static final String SELECT_ALL = "SELECT id, fullname, mobile_phone, image, image_path, "
             + "created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM " + TABLE;
 
-    public MBiodata findById(Long id) {
+    public MBiodata findByIdCached(Long id) {
         return (MBiodata) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MBiodata.class)
                 .setParameter("id", id)

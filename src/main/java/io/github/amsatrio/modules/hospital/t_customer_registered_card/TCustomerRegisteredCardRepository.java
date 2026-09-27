@@ -13,7 +13,7 @@ public class TCustomerRegisteredCardRepository implements PanacheRepository<TCus
 
     private static final String SELECT_ALL = "SELECT id, customer_id, card_number, validity_period, cvv, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_customer_registered_card";
 
-    public TCustomerRegisteredCard findById(Long id) {
+    public TCustomerRegisteredCard findByIdCached(Long id) {
         return (TCustomerRegisteredCard) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TCustomerRegisteredCard.class)
                 .setParameter("id", id)

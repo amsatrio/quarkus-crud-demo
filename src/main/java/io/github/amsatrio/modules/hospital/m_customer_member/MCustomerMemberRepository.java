@@ -13,7 +13,7 @@ public class MCustomerMemberRepository implements PanacheRepository<MCustomerMem
 
     private static final String SELECT_ALL = "SELECT id, parent_biodata_id, customer_id, customer_relation_id, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_customer_member";
 
-    public MCustomerMember findById(Long id) {
+    public MCustomerMember findByIdCached(Long id) {
         return (MCustomerMember) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MCustomerMember.class)
                 .setParameter("id", id)

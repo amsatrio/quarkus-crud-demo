@@ -13,7 +13,7 @@ public class MLocationLevelRepository implements PanacheRepository<MLocationLeve
 
     private static final String SELECT_ALL = "SELECT id, name, abbreviation, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_location_level";
 
-    public MLocationLevel findById(Long id) {
+    public MLocationLevel findByIdCached(Long id) {
         return (MLocationLevel) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MLocationLevel.class)
                 .setParameter("id", id)

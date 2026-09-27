@@ -13,7 +13,7 @@ public class MMedicalFacilityRepository implements PanacheRepository<MMedicalFac
 
     private static final String SELECT_ALL = "SELECT id, name, medical_facility_category_id, location_id, full_address, email, phone_code, phone, fax, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_medical_facility";
 
-    public MMedicalFacility findById(Long id) {
+    public MMedicalFacility findByIdCached(Long id) {
         return (MMedicalFacility) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MMedicalFacility.class)
                 .setParameter("id", id)

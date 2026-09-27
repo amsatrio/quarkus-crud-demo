@@ -13,7 +13,7 @@ public class MBiodataAttachmentRepository implements PanacheRepository<MBiodataA
 
     private static final String SELECT_ALL = "SELECT id, biodata_id, file_name, file_path, file_size, file, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_biodata_attachment";
 
-    public MBiodataAttachment findById(Long id) {
+    public MBiodataAttachment findByIdCached(Long id) {
         return (MBiodataAttachment) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MBiodataAttachment.class)
                 .setParameter("id", id)

@@ -13,7 +13,7 @@ public class MDoctorRepository implements PanacheRepository<MDoctor> {
 
     private static final String SELECT_ALL = "SELECT id, biodata_id, str_code, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_doctor";
 
-    public MDoctor findById(Long id) {
+    public MDoctor findByIdCached(Long id) {
         return (MDoctor) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MDoctor.class)
                 .setParameter("id", id)

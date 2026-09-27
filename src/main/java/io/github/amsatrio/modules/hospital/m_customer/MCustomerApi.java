@@ -1,21 +1,13 @@
 package io.github.amsatrio.modules.hospital.m_customer;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import io.github.amsatrio.dto.enumerator.FilterMatchMode;
-import io.github.amsatrio.dto.exception.DataExistException;
-import io.github.amsatrio.dto.exception.NotFoundException;
 import io.github.amsatrio.dto.request.FilterRequest;
 import io.github.amsatrio.dto.request.SortRequest;
 import io.github.amsatrio.dto.response.AppResponse;
 import io.github.amsatrio.dto.response.PaginationResponse;
 import jakarta.inject.Inject;
-import jakarta.persistence.NoResultException;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -29,101 +21,41 @@ import jakarta.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Path("/v1/m-customer")
+@Path("/v1/hospital/m-customer")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class MCustomerApi {
     @Inject
-    private MCustomerRepository mCustomerRepository;
+    private MCustomerService mCustomerService;
 
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public AppResponse<MCustomer> getById(@PathParam("id") Long id) {
-        MCustomer entity = null;
-        try {
-            entity = mCustomerRepository.findById(id);
-        } catch (NoResultException e) {
-            throw new NotFoundException("data not found");
-        }
-        return AppResponse.ok(entity);
+        return AppResponse.ok(mCustomerService.getById(id));
     }
 
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
     public AppResponse<MCustomer> deleteById(@PathParam("id") Long id) {
-        try {
-            mCustomerRepository.findById(id);
-        } catch (NoResultException e) {
-            throw new NotFoundException("data not found");
-        }
-        mCustomerRepository.hardDelete(id);
+        mCustomerService.deleteById(id);
         return AppResponse.ok(null);
     }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
     public AppResponse<MCustomer> create(MCustomer data) {
-        if (data.getId() != null) {
-            try {
-                MCustomer existing = mCustomerRepository.findById(data.getId());
-                if (existing != null) {
-                    throw new DataExistException("data exists");
-                }
-            } catch (NoResultException e) {
-                // expected - data does not exist
-            }
-        }
-
-        Long accessUserId = 0L;
-        data.setCreatedBy(accessUserId);
-        data.setCreatedOn(new Date());
-        data.setModifiedBy(null);
-        data.setModifiedOn(null);
-        data.setDeletedBy(null);
-        data.setDeletedOn(null);
-        data.setIsDelete(false);
-
-        mCustomerRepository.insert(data);
+        mCustomerService.create(data);
         return AppResponse.ok(null);
     }
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
     public AppResponse<MCustomer> update(MCustomer data) {
-        MCustomer entity = null;
-        try {
-            entity = mCustomerRepository.findById(data.getId());
-        } catch (NoResultException e) {
-            throw new NotFoundException("data not found");
-        }
-
-        Long accessUserId = 0L;
-        entity.setModifiedBy(accessUserId);
-        entity.setModifiedOn(new Date());
-        entity.setDeletedBy(null);
-        entity.setDeletedOn(null);
-        entity.setIsDelete(data.getIsDelete());
-        if (Boolean.TRUE.equals(entity.getIsDelete())) {
-            entity.setDeletedBy(accessUserId);
-            entity.setDeletedOn(new Date());
-        }
-
-        entity.setBiodataId(data.getBiodataId());
-        entity.setDob(data.getDob());
-        entity.setGender(data.getGender());
-        entity.setBloodGroupId(data.getBloodGroupId());
-        entity.setRhesusType(data.getRhesusType());
-        entity.setHeight(data.getHeight());
-        entity.setWeight(data.getWeight());
-
-        mCustomerRepository.update(entity);
+        mCustomerService.update(data);
         return AppResponse.ok(null);
     }
 
@@ -153,71 +85,6 @@ public class MCustomerApi {
             filterRequests = FilterRequest.from(filterRequestString);
         }
 
-        List<MCustomer> data = new ArrayList<>();
-        long totalData = 0L;
-
-        if (filterRequests.isEmpty()) {
-            data = mCustomerRepository.findAll(pageIndex, pageSize, sortColumn, sortAsc);
-            totalData = mCustomerRepository.countAll();
-        } else {
-            StringBuilder whereClause = new StringBuilder();
-            Map<String, Object> params = new HashMap<>();
-
-            for (int i = 0; i < filterRequests.size(); i++) {
-                FilterRequest filterRequest = filterRequests.get(i);
-                String column = MCustomerRepository.toColumnName(filterRequest.getId());
-                String paramName = "p" + i;
-
-                if (i != 0) {
-                    whereClause.append(" AND ");
-                }
-
-                whereClause.append(column);
-                switch (filterRequest.getMatchMode()) {
-                    case FilterMatchMode.CONTAINS:
-                        whereClause.append(" LIKE :").append(paramName);
-                        params.put(paramName, "%" + filterRequest.getValue() + "%");
-                        break;
-                    case FilterMatchMode.EQUALS:
-                        whereClause.append(" = :").append(paramName);
-                        params.put(paramName, filterRequest.getValue());
-                        break;
-                    case FilterMatchMode.NOT:
-                        whereClause.append(" <> :").append(paramName);
-                        params.put(paramName, filterRequest.getValue());
-                        break;
-                    case FilterMatchMode.LESS_THAN:
-                        whereClause.append(" < :").append(paramName);
-                        params.put(paramName, filterRequest.getValue());
-                        break;
-                    case FilterMatchMode.GREATER_THAN:
-                        whereClause.append(" > :").append(paramName);
-                        params.put(paramName, filterRequest.getValue());
-                        break;
-                    default:
-                        whereClause.append(" LIKE :").append(paramName);
-                        params.put(paramName, "%" + filterRequest.getValue() + "%");
-                        break;
-                }
-            }
-
-            data = mCustomerRepository.findByFilter(whereClause.toString(), params,
-                    pageIndex, pageSize, sortColumn, sortAsc);
-            totalData = mCustomerRepository.countByFilter(whereClause.toString(), params);
-        }
-
-        long totalPages = totalData / pageSize;
-        if (totalData % pageSize > 0) {
-            totalPages++;
-        }
-
-        PaginationResponse<MCustomer> paginationResponse = new PaginationResponse<>();
-        paginationResponse.setContent(data);
-        paginationResponse.setTotalElements(totalData);
-        paginationResponse.setTotalPages(totalPages);
-        paginationResponse.setFirst(pageIndex == 0);
-        paginationResponse.setLast(pageIndex == totalPages - 1);
-
-        return AppResponse.ok(paginationResponse);
+        return AppResponse.ok(mCustomerService.getPagination(pageIndex, pageSize, filterRequests, sortColumn, sortAsc));
     }
 }

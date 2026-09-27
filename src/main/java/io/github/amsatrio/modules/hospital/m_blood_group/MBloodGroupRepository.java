@@ -13,7 +13,7 @@ public class MBloodGroupRepository implements PanacheRepository<MBloodGroup> {
 
     private static final String SELECT_ALL = "SELECT id, code, descrtiption, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_blood_group";
 
-    public MBloodGroup findById(Long id) {
+    public MBloodGroup findByIdCached(Long id) {
         return (MBloodGroup) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MBloodGroup.class)
                 .setParameter("id", id)

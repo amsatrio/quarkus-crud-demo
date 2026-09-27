@@ -13,7 +13,7 @@ public class TCustomerWalletTopUpRepository implements PanacheRepository<TCustom
 
     private static final String SELECT_ALL = "SELECT id, customer_wallet_id, amount, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_customer_wallet_top_up";
 
-    public TCustomerWalletTopUp findById(Long id) {
+    public TCustomerWalletTopUp findByIdCached(Long id) {
         return (TCustomerWalletTopUp) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TCustomerWalletTopUp.class)
                 .setParameter("id", id)

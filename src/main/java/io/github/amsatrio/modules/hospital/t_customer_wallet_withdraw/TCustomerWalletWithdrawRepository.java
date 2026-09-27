@@ -13,7 +13,7 @@ public class TCustomerWalletWithdrawRepository implements PanacheRepository<TCus
 
     private static final String SELECT_ALL = "SELECT id, customer_id, wallet_default_nominal_id, amount, bank_name, account_number, account_name, otp, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_customer_wallet_withdraw";
 
-    public TCustomerWalletWithdraw findById(Long id) {
+    public TCustomerWalletWithdraw findByIdCached(Long id) {
         return (TCustomerWalletWithdraw) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TCustomerWalletWithdraw.class)
                 .setParameter("id", id)

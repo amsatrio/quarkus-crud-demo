@@ -13,7 +13,7 @@ public class MMenuRepository implements PanacheRepository<MMenu> {
 
     private static final String SELECT_ALL = "SELECT id, name, url, parent_id, big_icon, small_icon, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_menu";
 
-    public MMenu findById(Long id) {
+    public MMenu findByIdCached(Long id) {
         return (MMenu) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MMenu.class)
                 .setParameter("id", id)

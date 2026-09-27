@@ -1,7 +1,7 @@
-@base_url=http://localhost:8080
+@base_url=http://localhost:9090
 @hello_world_base_url={{base_url}}/v1/hello-world
 @health_base_url={{base_url}}/v1/health
-@mbiodata_base_url={{base_url}}/v1/m-biodata
+@mbiodata_base_url={{base_url}}/v1/hospital/m-biodata
 
 # === hello-world
 ### hello-world/hello

@@ -13,7 +13,7 @@ public class TResetPasswordRepository implements PanacheRepository<TResetPasswor
 
     private static final String SELECT_ALL = "SELECT id, old_password, new_password, reset_for, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_reset_password";
 
-    public TResetPassword findById(Long id) {
+    public TResetPassword findByIdCached(Long id) {
         return (TResetPassword) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TResetPassword.class)
                 .setParameter("id", id)

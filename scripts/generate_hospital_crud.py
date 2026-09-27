@@ -1,26 +1,35 @@
 #!/usr/bin/env python3
 """
-Generate Quarkus CRUD (Entity + Repository + API) classes for db-hospital tables.
+Generate Quarkus CRUD (Entity + Repository + Service + API) classes for db-hospital tables.
 
 For every table whose name starts with one of the configured prefixes (default
-``m_`` and ``t_``) this script emits three files inside the target package:
+``m_`` and ``t_``) this script emits four files inside the target package:
 
     <CamelName>.java             JPA entity
     <CamelName>Repository.java   Panache repository (native queries)
+    <CamelName>Service.java      Application-scoped service + cache annotations
     <CamelName>Api.java          JAX-RS resource: CRUD + pagination + sort + filter/search
 
 The generated code follows the existing ``MBiodata`` module convention:
 
-    GET    /v1/<table-with-dashes>/{id}   get by id
-    POST   /v1/<table-with-dashes>        create (id optional for AUTO_INCREMENT tables)
-    PUT    /v1/<table-with-dashes>        update
-    DELETE /v1/<table-with-dashes>/{id}   hard delete
-    GET    /v1/<table-with-dashes>        pagination + sort + filter/search
+    GET    /v1/hospital/<table-with-dashes>/{id}   get by id (Redis cached)
+    POST   /v1/hospital/<table-with-dashes>        create (invalidates Redis cache)
+    PUT    /v1/hospital/<table-with-dashes>        update (invalidates Redis cache)
+    DELETE /v1/hospital/<table-with-dashes>/{id}   hard delete (invalidates Redis cache)
+    GET    /v1/hospital/<table-with-dashes>        pagination + sort + filter/search
                                           ?page=0&size=5
                                           &sort=[{"id":"name","desc":true}]
                                           &filter=[{"id":"name","value":"ab",
                                                     "matchMode":"CONTAINS",
                                                     "dataType":"TEXT"}]
+
+The generated Services use the ``quarkus-redis-cache`` extension: the read
+methods (``getById`` and ``getPagination``) are annotated with ``@CacheResult``
+using the ``hospital/<table-with-dashes>`` and
+``hospital/<table-with-dashes>/pagination`` cache names. Write operations in
+the Service (POST/PUT/DELETE) are annotated with ``@CacheInvalidateAll``
+targeting both caches. The Repository classes are deliberately NOT cached -
+caching happens at the Service layer only (matching ``MBiodataService``).
 
 Schema input
 ------------
@@ -277,7 +286,7 @@ public class {name}Repository implements PanacheRepository<{name}> {{
 
     private static final String SELECT_ALL = "{select_all}";
 
-    public {name} findById(Long id) {{
+    public {name} findByIdCached(Long id) {{
         return ({name}) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", {name}.class)
                 .setParameter("id", id)
@@ -383,30 +392,20 @@ public class {name}Repository implements PanacheRepository<{name}> {{
 # --------------------------------------------------------------------------- #
 def build_api(table, columns, package):
     name = class_name(table)
-    low = name[0].lower() + name[1:]
-    repo = f"{low}Repository"
+    prefix = name[0].lower() + name[1:]
+    svc = f"{prefix}Service"
     slug = table.replace("_", "-")
-    business = [camel(col) for col, _ in columns if col not in AUDIT and col != "id"]
-    upd = "\n".join(f"        entity.set{upper_first(p)}(data.get{upper_first(p)}());" for p in business)
 
     return f"""package {package}.{table};
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import io.github.amsatrio.dto.enumerator.FilterMatchMode;
-import io.github.amsatrio.dto.exception.DataExistException;
-import io.github.amsatrio.dto.exception.NotFoundException;
 import io.github.amsatrio.dto.request.FilterRequest;
 import io.github.amsatrio.dto.request.SortRequest;
 import io.github.amsatrio.dto.response.AppResponse;
 import io.github.amsatrio.dto.response.PaginationResponse;
 import jakarta.inject.Inject;
-import jakarta.persistence.NoResultException;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -420,95 +419,41 @@ import jakarta.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Path("/v1/{slug}")
+@Path("/v1/hospital/{slug}")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class {name}Api {{
     @Inject
-    private {name}Repository {repo};
+    private {name}Service {svc};
 
     @GET
     @Path("/{{id}}")
     @Produces(MediaType.APPLICATION_JSON)
     public AppResponse<{name}> getById(@PathParam("id") Long id) {{
-        {name} entity = null;
-        try {{
-            entity = {repo}.findById(id);
-        }} catch (NoResultException e) {{
-            throw new NotFoundException("data not found");
-        }}
-        return AppResponse.ok(entity);
+        return AppResponse.ok({svc}.getById(id));
     }}
 
     @DELETE
     @Path("/{{id}}")
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
     public AppResponse<{name}> deleteById(@PathParam("id") Long id) {{
-        try {{
-            {repo}.findById(id);
-        }} catch (NoResultException e) {{
-            throw new NotFoundException("data not found");
-        }}
-        {repo}.hardDelete(id);
+        {svc}.deleteById(id);
         return AppResponse.ok(null);
     }}
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
     public AppResponse<{name}> create({name} data) {{
-        if (data.getId() != null) {{
-            try {{
-                {name} existing = {repo}.findById(data.getId());
-                if (existing != null) {{
-                    throw new DataExistException("data exists");
-                }}
-            }} catch (NoResultException e) {{
-                // expected - data does not exist
-            }}
-        }}
-
-        Long accessUserId = 0L;
-        data.setCreatedBy(accessUserId);
-        data.setCreatedOn(new Date());
-        data.setModifiedBy(null);
-        data.setModifiedOn(null);
-        data.setDeletedBy(null);
-        data.setDeletedOn(null);
-        data.setIsDelete(false);
-
-        {repo}.insert(data);
+        {svc}.create(data);
         return AppResponse.ok(null);
     }}
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Transactional
     public AppResponse<{name}> update({name} data) {{
-        {name} entity = null;
-        try {{
-            entity = {repo}.findById(data.getId());
-        }} catch (NoResultException e) {{
-            throw new NotFoundException("data not found");
-        }}
-
-        Long accessUserId = 0L;
-        entity.setModifiedBy(accessUserId);
-        entity.setModifiedOn(new Date());
-        entity.setDeletedBy(null);
-        entity.setDeletedOn(null);
-        entity.setIsDelete(data.getIsDelete());
-        if (Boolean.TRUE.equals(entity.getIsDelete())) {{
-            entity.setDeletedBy(accessUserId);
-            entity.setDeletedOn(new Date());
-        }}
-
-{upd}
-
-        {repo}.update(entity);
+        {svc}.update(data);
         return AppResponse.ok(null);
     }}
 
@@ -537,6 +482,136 @@ public class {name}Api {{
         if (filterRequestString != null) {{
             filterRequests = FilterRequest.from(filterRequestString);
         }}
+
+        return AppResponse.ok({svc}.getPagination(pageIndex, pageSize, filterRequests, sortColumn, sortAsc));
+    }}
+}}
+"""
+
+
+# --------------------------------------------------------------------------- #
+# service
+# --------------------------------------------------------------------------- #
+def build_service(table, columns, package):
+    name = class_name(table)
+    repo = f"{name[0].lower() + name[1:]}Repository"
+    slug = table.replace("_", "-")
+    business = [camel(col) for col, _ in columns if col not in AUDIT and col != "id"]
+    upd = "\n".join(
+        f"        entity.set{upper_first(p)}(data.get{upper_first(p)}());"
+        for p in business
+    )
+
+    return f"""package {package}.{table};
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import io.github.amsatrio.dto.enumerator.FilterMatchMode;
+import io.github.amsatrio.dto.exception.DataExistException;
+import io.github.amsatrio.dto.exception.NotFoundException;
+import io.github.amsatrio.dto.request.FilterRequest;
+import io.github.amsatrio.dto.response.PaginationResponse;
+import io.quarkus.cache.CacheInvalidateAll;
+import io.quarkus.cache.CacheKey;
+import io.quarkus.cache.CacheResult;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.NoResultException;
+import jakarta.transaction.Transactional;
+
+@ApplicationScoped
+public class {name}Service {{
+    @Inject
+    private {name}Repository {repo};
+
+    @CacheResult(cacheName = "hospital/{slug}")
+    public {name} getById(@CacheKey Long id) {{
+        {name} entity = null;
+        try {{
+            entity = {repo}.findByIdCached(id);
+        }} catch (NoResultException e) {{
+            throw new NotFoundException("data not found");
+        }}
+        return entity;
+    }}
+
+    @Transactional
+    @CacheInvalidateAll(cacheName = "hospital/{slug}")
+    @CacheInvalidateAll(cacheName = "hospital/{slug}/pagination")
+    public void deleteById(Long id) {{
+        try {{
+            {repo}.findByIdCached(id);
+        }} catch (NoResultException e) {{
+            throw new NotFoundException("data not found");
+        }}
+        {repo}.hardDelete(id);
+    }}
+
+    @Transactional
+    @CacheInvalidateAll(cacheName = "hospital/{slug}")
+    @CacheInvalidateAll(cacheName = "hospital/{slug}/pagination")
+    public void create({name} data) {{
+        if (data.getId() != null) {{
+            try {{
+                {name} existing = {repo}.findByIdCached(data.getId());
+                if (existing != null) {{
+                    throw new DataExistException("data exists");
+                }}
+            }} catch (NoResultException e) {{
+                // expected - data does not exist
+            }}
+        }}
+
+        Long accessUserId = 0L;
+        data.setCreatedBy(accessUserId);
+        data.setCreatedOn(new Date());
+        data.setModifiedBy(null);
+        data.setModifiedOn(null);
+        data.setDeletedBy(null);
+        data.setDeletedOn(null);
+        data.setIsDelete(false);
+
+        {repo}.insert(data);
+    }}
+
+    @Transactional
+    @CacheInvalidateAll(cacheName = "hospital/{slug}")
+    @CacheInvalidateAll(cacheName = "hospital/{slug}/pagination")
+    public void update({name} data) {{
+        {name} entity = null;
+        try {{
+            entity = {repo}.findByIdCached(data.getId());
+        }} catch (NoResultException e) {{
+            throw new NotFoundException("data not found");
+        }}
+
+        Long accessUserId = 0L;
+        entity.setModifiedBy(accessUserId);
+        entity.setModifiedOn(new Date());
+        entity.setDeletedBy(null);
+        entity.setDeletedOn(null);
+        entity.setIsDelete(data.getIsDelete());
+        if (Boolean.TRUE.equals(entity.getIsDelete())) {{
+            entity.setDeletedBy(accessUserId);
+            entity.setDeletedOn(new Date());
+        }}
+
+{upd}
+
+        {repo}.update(entity);
+    }}
+
+    @CacheResult(cacheName = "hospital/{slug}/pagination")
+    public PaginationResponse<{name}> getPagination(
+            @CacheKey Integer pageIndex,
+            @CacheKey Integer pageSize,
+            @CacheKey List<FilterRequest> filterRequests,
+            @CacheKey String sortColumn,
+            @CacheKey boolean sortAsc) {{
 
         List<{name}> data = new ArrayList<>();
         long totalData = 0L;
@@ -603,7 +678,7 @@ public class {name}Api {{
         paginationResponse.setFirst(pageIndex == 0);
         paginationResponse.setLast(pageIndex == totalPages - 1);
 
-        return AppResponse.ok(paginationResponse);
+        return paginationResponse;
     }}
 }}
 """
@@ -709,11 +784,11 @@ def main():
         name = class_name(table)
         (out_dir / f"{name}.java").write_text(build_entity(table, columns, args.package))
         (out_dir / f"{name}Repository.java").write_text(build_repository(table, columns, args.package))
+        (out_dir / f"{name}Service.java").write_text(build_service(table, columns, args.package))
         (out_dir / f"{name}Api.java").write_text(build_api(table, columns, args.package))
         created += 1
         print(f"generated {table} -> {name}")
-
-    print(f"done: {created} table(s), {created * 3} file(s) under {args.output}")
+    print(f"done: {created} table(s), {created * 4} file(s) under {args.output}")
 
 
 if __name__ == "__main__":

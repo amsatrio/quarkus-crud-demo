@@ -13,7 +13,7 @@ public class MMedicalItemRepository implements PanacheRepository<MMedicalItem> {
 
     private static final String SELECT_ALL = "SELECT id, name, medical_item_category_id, composition, medical_item_segmentation_id, manufacturer, indication, dosage, directions, contraindication, caution, packaging, price_max, price_min, image, image_path, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_medical_item";
 
-    public MMedicalItem findById(Long id) {
+    public MMedicalItem findByIdCached(Long id) {
         return (MMedicalItem) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MMedicalItem.class)
                 .setParameter("id", id)

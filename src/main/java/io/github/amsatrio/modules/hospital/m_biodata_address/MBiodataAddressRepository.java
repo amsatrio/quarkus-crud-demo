@@ -13,7 +13,7 @@ public class MBiodataAddressRepository implements PanacheRepository<MBiodataAddr
 
     private static final String SELECT_ALL = "SELECT id, biodata_id, label, recipient, recipient_phone_number, location_id, postal_code, address, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_biodata_address";
 
-    public MBiodataAddress findById(Long id) {
+    public MBiodataAddress findByIdCached(Long id) {
         return (MBiodataAddress) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MBiodataAddress.class)
                 .setParameter("id", id)

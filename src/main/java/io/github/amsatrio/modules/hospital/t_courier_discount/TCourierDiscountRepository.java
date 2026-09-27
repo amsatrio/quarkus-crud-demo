@@ -13,7 +13,7 @@ public class TCourierDiscountRepository implements PanacheRepository<TCourierDis
 
     private static final String SELECT_ALL = "SELECT id, courier_type_id, value, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_courier_discount";
 
-    public TCourierDiscount findById(Long id) {
+    public TCourierDiscount findByIdCached(Long id) {
         return (TCourierDiscount) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TCourierDiscount.class)
                 .setParameter("id", id)

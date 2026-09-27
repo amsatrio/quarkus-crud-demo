@@ -13,7 +13,7 @@ public class TDoctorOfficeScheduleRepository implements PanacheRepository<TDocto
 
     private static final String SELECT_ALL = "SELECT id, doctor_id, medical_facility_schedule_id, slot, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_doctor_office_schedule";
 
-    public TDoctorOfficeSchedule findById(Long id) {
+    public TDoctorOfficeSchedule findByIdCached(Long id) {
         return (TDoctorOfficeSchedule) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TDoctorOfficeSchedule.class)
                 .setParameter("id", id)

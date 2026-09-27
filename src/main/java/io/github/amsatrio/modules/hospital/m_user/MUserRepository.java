@@ -13,7 +13,7 @@ public class MUserRepository implements PanacheRepository<MUser> {
 
     private static final String SELECT_ALL = "SELECT id, biodata_id, role_id, email, password, login_attempt, is_locked, last_login, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_user";
 
-    public MUser findById(Long id) {
+    public MUser findByIdCached(Long id) {
         return (MUser) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MUser.class)
                 .setParameter("id", id)

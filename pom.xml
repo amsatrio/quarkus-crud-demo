@@ -57,6 +57,10 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-redis-cache</artifactId>
+        </dependency>
 
         <!-- DATABASE -->
         <dependency>
@@ -74,6 +78,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-mysql</artifactId>
+        </dependency>
+
+        <!-- FLYWAY -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-flyway</artifactId>
         </dependency>
 
         <!--    LOGGER-->
@@ -98,15 +108,20 @@
             <version>8.0</version>
         </dependency>
         <dependency>
-            <groupId>com.github.danielwegener</groupId>
-            <artifactId>logback-kafka-appender</artifactId>
-            <version>0.2.0-RC2</version>
+            <groupId>io.github.amsatrio</groupId>
+            <artifactId>logback-appender</artifactId>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.48</version>
         </dependency>
+        <dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-clients</artifactId>
+			<version>4.1.1</version>
+		</dependency>
 
         <!-- TESTING UNIT -->
         <dependency>

@@ -13,7 +13,7 @@ public class TCustomerCustomNominalRepository implements PanacheRepository<TCust
 
     private static final String SELECT_ALL = "SELECT id, customer_id, nominal, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_customer_custom_nominal";
 
-    public TCustomerCustomNominal findById(Long id) {
+    public TCustomerCustomNominal findByIdCached(Long id) {
         return (TCustomerCustomNominal) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TCustomerCustomNominal.class)
                 .setParameter("id", id)

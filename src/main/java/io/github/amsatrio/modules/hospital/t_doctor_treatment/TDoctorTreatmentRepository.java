@@ -13,7 +13,7 @@ public class TDoctorTreatmentRepository implements PanacheRepository<TDoctorTrea
 
     private static final String SELECT_ALL = "SELECT id, doctor_id, name, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_doctor_treatment";
 
-    public TDoctorTreatment findById(Long id) {
+    public TDoctorTreatment findByIdCached(Long id) {
         return (TDoctorTreatment) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TDoctorTreatment.class)
                 .setParameter("id", id)

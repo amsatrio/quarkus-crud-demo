@@ -13,7 +13,7 @@ public class TAppointmentCancellationRepository implements PanacheRepository<TAp
 
     private static final String SELECT_ALL = "SELECT id, appointment_id, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_appointment_cancellation";
 
-    public TAppointmentCancellation findById(Long id) {
+    public TAppointmentCancellation findByIdCached(Long id) {
         return (TAppointmentCancellation) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TAppointmentCancellation.class)
                 .setParameter("id", id)

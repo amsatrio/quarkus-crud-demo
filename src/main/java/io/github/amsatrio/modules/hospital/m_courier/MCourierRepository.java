@@ -13,7 +13,7 @@ public class MCourierRepository implements PanacheRepository<MCourier> {
 
     private static final String SELECT_ALL = "SELECT id, name, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_courier";
 
-    public MCourier findById(Long id) {
+    public MCourier findByIdCached(Long id) {
         return (MCourier) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MCourier.class)
                 .setParameter("id", id)

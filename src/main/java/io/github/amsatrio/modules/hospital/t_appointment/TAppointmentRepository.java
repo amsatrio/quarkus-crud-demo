@@ -13,7 +13,7 @@ public class TAppointmentRepository implements PanacheRepository<TAppointment> {
 
     private static final String SELECT_ALL = "SELECT id, customer_id, doctor_office_id, doctor_office_schedule_id, doctor_office_treatment_id, appointment_date, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_appointment";
 
-    public TAppointment findById(Long id) {
+    public TAppointment findByIdCached(Long id) {
         return (TAppointment) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TAppointment.class)
                 .setParameter("id", id)

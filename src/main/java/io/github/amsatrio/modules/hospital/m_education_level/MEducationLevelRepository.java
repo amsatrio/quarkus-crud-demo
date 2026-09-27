@@ -13,7 +13,7 @@ public class MEducationLevelRepository implements PanacheRepository<MEducationLe
 
     private static final String SELECT_ALL = "SELECT id, name, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_education_level";
 
-    public MEducationLevel findById(Long id) {
+    public MEducationLevel findByIdCached(Long id) {
         return (MEducationLevel) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MEducationLevel.class)
                 .setParameter("id", id)

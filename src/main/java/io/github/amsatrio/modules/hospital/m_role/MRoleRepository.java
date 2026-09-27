@@ -13,7 +13,7 @@ public class MRoleRepository implements PanacheRepository<MRole> {
 
     private static final String SELECT_ALL = "SELECT id, name, code, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM m_role";
 
-    public MRole findById(Long id) {
+    public MRole findByIdCached(Long id) {
         return (MRole) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", MRole.class)
                 .setParameter("id", id)

@@ -13,7 +13,7 @@ public class TCustomerVaHistoryRepository implements PanacheRepository<TCustomer
 
     private static final String SELECT_ALL = "SELECT id, customer_va_id, amount, expired_on, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_customer_va_history";
 
-    public TCustomerVaHistory findById(Long id) {
+    public TCustomerVaHistory findByIdCached(Long id) {
         return (TCustomerVaHistory) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TCustomerVaHistory.class)
                 .setParameter("id", id)

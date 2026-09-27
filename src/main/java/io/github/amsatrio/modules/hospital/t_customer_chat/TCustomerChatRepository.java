@@ -13,7 +13,7 @@ public class TCustomerChatRepository implements PanacheRepository<TCustomerChat>
 
     private static final String SELECT_ALL = "SELECT id, customer_id, doctor_id, created_by, created_on, modified_by, modified_on, deleted_by, deleted_on, is_delete FROM t_customer_chat";
 
-    public TCustomerChat findById(Long id) {
+    public TCustomerChat findByIdCached(Long id) {
         return (TCustomerChat) getEntityManager()
                 .createNativeQuery(SELECT_ALL + " WHERE id = :id LIMIT 1", TCustomerChat.class)
                 .setParameter("id", id)
